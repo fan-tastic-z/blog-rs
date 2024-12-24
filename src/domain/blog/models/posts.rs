@@ -90,3 +90,40 @@ impl From<ListPostError> for ApiError {
         }
     }
 }
+
+#[derive(Debug, Clone, Validate)]
+pub struct UpdatePostRequest {
+    pub id: String,
+    #[validate(length(min = 1, max = 50))]
+    pub title: String,
+    #[validate(length(min = 1))]
+    pub content: String,
+}
+
+impl UpdatePostRequest {
+    pub fn new(id: String, title: String, content: String) -> Result<Self, UpdatePostError> {
+        let req = Self { id, title, content };
+        req.validate()?;
+        Ok(req)
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum UpdatePostError {
+    #[error("create post request validate error")]
+    ValidationError(#[from] validator::ValidationErrors),
+    #[error(transparent)]
+    Unknown(#[from] anyhow::Error),
+}
+
+impl From<UpdatePostError> for ApiError {
+    fn from(e: UpdatePostError) -> Self {
+        match e {
+            UpdatePostError::ValidationError(err) => ApiError::UnprocessableEntity(err.to_string()),
+            UpdatePostError::Unknown(err) => {
+                tracing::error!("{:?}\n{}", err, err.backtrace());
+                ApiError::InternalServerError(err.to_string())
+            }
+        }
+    }
+}

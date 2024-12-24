@@ -1,5 +1,8 @@
 use super::{
-    models::posts::{CreatePostError, CreatePostRequest, Post},
+    models::posts::{
+        CreatePostError, CreatePostRequest, ListPostError, ListPostRequest, ListPostResponse, Post,
+        UpdatePostRequest,
+    },
     ports::{BlogRepository, BlogService},
 };
 
@@ -28,10 +31,11 @@ where
         self.repo.create_post(req).await
     }
 
-    async fn list_post(
-        &self,
-        req: super::models::posts::ListPostRequest,
-    ) -> Result<super::models::posts::ListPostResponse, super::models::posts::ListPostError> {
+    async fn list_post(&self, req: ListPostRequest) -> Result<ListPostResponse, ListPostError> {
         self.repo.list_post(req).await
+    }
+
+    async fn update_post(&self, req: &UpdatePostRequest) -> Result<Post, CreatePostError> {
+        self.repo.update_post(req).await
     }
 }

@@ -3,14 +3,14 @@ use std::sync::Arc;
 use anyhow::{Context, Ok};
 
 use axum::{
-    routing::{get, post},
+    routing::{get, post, put},
     Router,
 };
 use tokio::net;
 
 use crate::{config::ApplicationSettings, domain::blog::ports::BlogService};
 
-use super::handlers::{create_post, list_post};
+use super::handlers::{create_post, list_post, update_post};
 
 #[derive(Debug, Clone)]
 pub struct AppState<BS: BlogService> {
@@ -61,4 +61,5 @@ fn api_routes<BS: BlogService>() -> Router<AppState<BS>> {
     Router::new()
         .route("/posts", post(create_post::create_post::<BS>))
         .route("/posts", get(list_post::list_post::<BS>))
+        .route("/posts/:id", put(update_post::update_post::<BS>))
 }

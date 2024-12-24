@@ -5,6 +5,7 @@ use uuid::Uuid;
 use crate::domain::blog::{
     models::posts::{
         CreatePostError, CreatePostRequest, ListPostError, ListPostRequest, ListPostResponse, Post,
+        UpdatePostRequest,
     },
     ports::BlogRepository,
 };
@@ -81,6 +82,27 @@ impl Pg {
         .await?;
         Ok(res)
     }
+
+    pub async fn update_post(
+        &self,
+        tx: &mut Transaction<'_, Postgres>,
+        id: &str,
+        title: &str,
+        content: &str,
+    ) -> anyhow::Result<Post> {
+        let post = sqlx::query_as::<_, Post>(
+            r#"
+            UPDATE posts SET title = $2, content = $3, updated_at = NOW() WHERE id = $1
+            RETURNING *
+            "#,
+        )
+        .bind(id.to_string())
+        .bind(title.to_string())
+        .bind(content.to_string())
+        .fetch_one(tx.as_mut())
+        .await?;
+        Ok(post)
+    }
 }
 
 impl BlogRepository for Pg {
@@ -108,5 +130,19 @@ impl BlogRepository for Pg {
         let total = self.post_count(&mut tx).await?;
         tx.commit().await.context("failed to commit")?;
         Ok(ListPostResponse { total, posts })
+    }
+
+    async fn update_post(&self, req: &UpdatePostRequest) -> Result<Post, CreatePostError> {
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .context("failed t start transaction")?;
+        let post = self
+            .update_post(&mut tx, &req.id, &req.title, &req.content)
+            .await
+            .context("failed to update post")?;
+        tx.commit().await.context("failed to commit")?;
+        Ok(post)
     }
 }
