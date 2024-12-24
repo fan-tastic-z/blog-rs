@@ -10,6 +10,7 @@ pub struct Post {
     pub title: String,
     pub content: String,
     pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Clone, Validate)]
@@ -43,6 +44,48 @@ impl From<CreatePostError> for ApiError {
             CreatePostError::Unknown(e) => {
                 tracing::error!("{:?}\n{}", e, e.backtrace());
                 ApiError::InternalServerError(e.to_string())
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Validate)]
+pub struct ListPostRequest {
+    #[validate(range(min = 0))]
+    pub offset: u32,
+    #[validate(range(min = 1, max = 50))]
+    pub limit: u32,
+}
+
+impl ListPostRequest {
+    pub fn new(offset: u32, limit: u32) -> Result<Self, ListPostError> {
+        let req = Self { offset, limit };
+        req.validate()?;
+        Ok(req)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct ListPostResponse {
+    pub total: u64,
+    pub posts: Vec<Post>,
+}
+
+#[derive(Debug, Error)]
+pub enum ListPostError {
+    #[error("list post request validate error")]
+    ValidationError(#[from] validator::ValidationErrors),
+    #[error(transparent)]
+    Unknown(#[from] anyhow::Error),
+}
+
+impl From<ListPostError> for ApiError {
+    fn from(e: ListPostError) -> Self {
+        match e {
+            ListPostError::ValidationError(err) => ApiError::UnprocessableEntity(err.to_string()),
+            ListPostError::Unknown(err) => {
+                tracing::error!("{:?}\n{}", err, err.backtrace());
+                ApiError::InternalServerError(err.to_string())
             }
         }
     }

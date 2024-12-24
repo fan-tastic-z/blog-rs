@@ -3,7 +3,9 @@ use sqlx::{Postgres, Transaction};
 use uuid::Uuid;
 
 use crate::domain::blog::{
-    models::posts::{CreatePostError, CreatePostRequest, Post},
+    models::posts::{
+        CreatePostError, CreatePostRequest, ListPostError, ListPostRequest, ListPostResponse, Post,
+    },
     ports::BlogRepository,
 };
 
@@ -38,13 +40,46 @@ impl Pg {
     ) -> anyhow::Result<Post> {
         let post = sqlx::query_as::<_, Post>(
             r#"
-            SELECT id, title, content, create_at FROM posts WHERE id = $1
+            SELECT id, title, content, created_at, updated_at FROM posts WHERE id = $1
             "#,
         )
         .bind(id.to_string())
         .fetch_one(tx.as_mut())
         .await?;
         Ok(post)
+    }
+
+    pub async fn post_count(&self, tx: &mut Transaction<'_, Postgres>) -> anyhow::Result<u64> {
+        let count: (i64,) = sqlx::query_as(
+            r#"
+            SELECT COUNT(id) FROM posts
+            "#,
+        )
+        .fetch_one(tx.as_mut())
+        .await?;
+        Ok(count.0 as u64)
+    }
+
+    pub async fn list_post(
+        &self,
+        tx: &mut Transaction<'_, Postgres>,
+        offset: u32,
+        limit: u32,
+    ) -> anyhow::Result<Vec<Post>> {
+        let res = sqlx::query_as::<_, Post>(
+            r#"
+            SELECT
+                id, title, content, created_at, updated_at
+            FROM
+                posts
+            ORDER BY created_at DESC OFFSET $1 LIMIT $2
+            "#,
+        )
+        .bind(offset as i64)
+        .bind(limit as i64)
+        .fetch_all(tx.as_mut())
+        .await?;
+        Ok(res)
     }
 }
 
@@ -61,5 +96,17 @@ impl BlogRepository for Pg {
             .context("failed to save post")?;
         tx.commit().await.context("failed to commit")?;
         Ok(post)
+    }
+
+    async fn list_post(&self, req: ListPostRequest) -> Result<ListPostResponse, ListPostError> {
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .context("failed t start transaction")?;
+        let posts = self.list_post(&mut tx, req.offset, req.limit).await?;
+        let total = self.post_count(&mut tx).await?;
+        tx.commit().await.context("failed to commit")?;
+        Ok(ListPostResponse { total, posts })
     }
 }
