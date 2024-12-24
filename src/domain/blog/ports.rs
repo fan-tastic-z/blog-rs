@@ -1,8 +1,8 @@
 use std::future::Future;
 
 use super::models::posts::{
-    CreatePostError, CreatePostRequest, ListPostError, ListPostRequest, ListPostResponse, Post,
-    UpdatePostRequest,
+    CreatePostError, CreatePostRequest, DeletePostError, DeletePostRequest, ListPostError,
+    ListPostRequest, ListPostResponse, Post, UpdatePostRequest,
 };
 
 pub trait BlogService: Clone + Send + Sync + 'static {
@@ -20,6 +20,11 @@ pub trait BlogService: Clone + Send + Sync + 'static {
         &self,
         req: &UpdatePostRequest,
     ) -> impl Future<Output = Result<Post, CreatePostError>> + Send;
+
+    fn delete_post(
+        &self,
+        req: &DeletePostRequest,
+    ) -> impl Future<Output = Result<(), DeletePostError>> + Send;
 }
 
 pub trait BlogRepository: Clone + Send + Sync + 'static {
@@ -37,4 +42,9 @@ pub trait BlogRepository: Clone + Send + Sync + 'static {
         &self,
         req: &UpdatePostRequest,
     ) -> impl Future<Output = Result<Post, CreatePostError>> + Send;
+
+    fn delete_post(
+        &self,
+        req: &DeletePostRequest,
+    ) -> impl Future<Output = Result<(), DeletePostError>> + Send;
 }

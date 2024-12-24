@@ -1,7 +1,7 @@
 use super::{
     models::posts::{
-        CreatePostError, CreatePostRequest, ListPostError, ListPostRequest, ListPostResponse, Post,
-        UpdatePostRequest,
+        CreatePostError, CreatePostRequest, DeletePostError, DeletePostRequest, ListPostError,
+        ListPostRequest, ListPostResponse, Post, UpdatePostRequest,
     },
     ports::{BlogRepository, BlogService},
 };
@@ -37,5 +37,8 @@ where
 
     async fn update_post(&self, req: &UpdatePostRequest) -> Result<Post, CreatePostError> {
         self.repo.update_post(req).await
+    }
+    async fn delete_post(&self, req: &DeletePostRequest) -> Result<(), DeletePostError> {
+        self.repo.delete_post(req).await
     }
 }

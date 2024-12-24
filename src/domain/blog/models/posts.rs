@@ -110,7 +110,7 @@ impl UpdatePostRequest {
 
 #[derive(Debug, Error)]
 pub enum UpdatePostError {
-    #[error("create post request validate error")]
+    #[error("update post request validate error")]
     ValidationError(#[from] validator::ValidationErrors),
     #[error(transparent)]
     Unknown(#[from] anyhow::Error),
@@ -121,6 +121,39 @@ impl From<UpdatePostError> for ApiError {
         match e {
             UpdatePostError::ValidationError(err) => ApiError::UnprocessableEntity(err.to_string()),
             UpdatePostError::Unknown(err) => {
+                tracing::error!("{:?}\n{}", err, err.backtrace());
+                ApiError::InternalServerError(err.to_string())
+            }
+        }
+    }
+}
+
+#[derive(Debug, Clone, Validate)]
+pub struct DeletePostRequest {
+    pub id: String,
+}
+
+impl DeletePostRequest {
+    pub fn new(id: String) -> Result<Self, DeletePostError> {
+        let req = Self { id };
+        req.validate()?;
+        Ok(req)
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum DeletePostError {
+    #[error("delete post request validate error")]
+    ValidationError(#[from] validator::ValidationErrors),
+    #[error(transparent)]
+    Unknown(#[from] anyhow::Error),
+}
+
+impl From<DeletePostError> for ApiError {
+    fn from(e: DeletePostError) -> Self {
+        match e {
+            DeletePostError::ValidationError(err) => ApiError::UnprocessableEntity(err.to_string()),
+            DeletePostError::Unknown(err) => {
                 tracing::error!("{:?}\n{}", err, err.backtrace());
                 ApiError::InternalServerError(err.to_string())
             }
