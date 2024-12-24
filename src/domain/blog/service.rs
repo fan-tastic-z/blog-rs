@@ -1,7 +1,8 @@
 use super::{
     models::posts::{
-        CreatePostError, CreatePostRequest, DeletePostError, DeletePostRequest, ListPostError,
-        ListPostRequest, ListPostResponse, Post, UpdatePostRequest,
+        BatchDeletePostError, BatchDeletePostRequest, CreatePostError, CreatePostRequest,
+        DeletePostError, DeletePostRequest, ListPostError, ListPostRequest, ListPostResponse, Post,
+        UpdatePostRequest,
     },
     ports::{BlogRepository, BlogService},
 };
@@ -40,5 +41,12 @@ where
     }
     async fn delete_post(&self, req: &DeletePostRequest) -> Result<(), DeletePostError> {
         self.repo.delete_post(req).await
+    }
+
+    async fn batch_delete_post(
+        &self,
+        req: &BatchDeletePostRequest,
+    ) -> Result<(), BatchDeletePostError> {
+        self.repo.batch_delete_post(req).await
     }
 }

@@ -4,8 +4,9 @@ use uuid::Uuid;
 
 use crate::domain::blog::{
     models::posts::{
-        CreatePostError, CreatePostRequest, DeletePostError, DeletePostRequest, ListPostError,
-        ListPostRequest, ListPostResponse, Post, UpdatePostRequest,
+        BatchDeletePostError, BatchDeletePostRequest, CreatePostError, CreatePostRequest,
+        DeletePostError, DeletePostRequest, ListPostError, ListPostRequest, ListPostResponse, Post,
+        UpdatePostRequest,
     },
     ports::BlogRepository,
 };
@@ -119,6 +120,22 @@ impl Pg {
         .await?;
         Ok(())
     }
+
+    pub async fn delete_by_ids(
+        &self,
+        tx: &mut Transaction<'_, Postgres>,
+        ids: Vec<String>,
+    ) -> anyhow::Result<()> {
+        sqlx::query(
+            r#"
+            DELETE FROM posts WHERE id = ANY($1)
+            "#,
+        )
+        .bind(ids)
+        .execute(tx.as_mut())
+        .await?;
+        Ok(())
+    }
 }
 
 impl BlogRepository for Pg {
@@ -169,6 +186,21 @@ impl BlogRepository for Pg {
             .await
             .context("failed t start transaction")?;
         self.delete_by_id(&mut tx, &req.id).await?;
+        tx.commit().await.context("failed to commit")?;
+        Ok(())
+    }
+
+    async fn batch_delete_post(
+        &self,
+        req: &BatchDeletePostRequest,
+    ) -> Result<(), BatchDeletePostError> {
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .context("failed t start transaction")?;
+
+        self.delete_by_ids(&mut tx, req.ids.clone()).await?;
         tx.commit().await.context("failed to commit")?;
         Ok(())
     }

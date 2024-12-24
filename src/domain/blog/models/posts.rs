@@ -160,3 +160,39 @@ impl From<DeletePostError> for ApiError {
         }
     }
 }
+
+#[derive(Debug, Clone, Validate)]
+pub struct BatchDeletePostRequest {
+    #[validate(length(min = 1))]
+    pub ids: Vec<String>,
+}
+
+impl BatchDeletePostRequest {
+    pub fn new(ids: Vec<String>) -> Result<Self, BatchDeletePostError> {
+        let req = Self { ids };
+        req.validate()?;
+        Ok(req)
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum BatchDeletePostError {
+    #[error("batch delete post request validate error")]
+    ValidationError(#[from] validator::ValidationErrors),
+    #[error(transparent)]
+    Unknown(#[from] anyhow::Error),
+}
+
+impl From<BatchDeletePostError> for ApiError {
+    fn from(e: BatchDeletePostError) -> Self {
+        match e {
+            BatchDeletePostError::ValidationError(err) => {
+                ApiError::UnprocessableEntity(err.to_string())
+            }
+            BatchDeletePostError::Unknown(err) => {
+                tracing::error!("{:?}\n{}", err, err.backtrace());
+                ApiError::InternalServerError(err.to_string())
+            }
+        }
+    }
+}
