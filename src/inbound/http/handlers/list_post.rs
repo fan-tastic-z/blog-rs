@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     domain::blog::{
-        models::posts::{ListPostError, ListPostRequest, ListPostResponse, Post},
+        error::Error,
+        models::posts::{ListPostRequest, ListPostResponse, Post},
         ports::BlogService,
     },
     inbound::http::{
@@ -23,7 +24,7 @@ pub struct ListPostHttpRequestBody {
 }
 
 impl ListPostHttpRequestBody {
-    fn try_into_domain(self) -> Result<ListPostRequest, ListPostError> {
+    fn try_into_domain(self) -> Result<ListPostRequest, Error> {
         let req = ListPostRequest::new(self.offset, self.limit)?;
         Ok(req)
     }

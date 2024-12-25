@@ -5,7 +5,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     domain::blog::{
-        models::posts::{CreatePostError, CreatePostRequest, Post},
+        error::Error,
+        models::posts::{CreatePostRequest, Post},
         ports::BlogService,
     },
     inbound::http::{
@@ -21,7 +22,7 @@ pub struct CreatePostHttpRequestBody {
 }
 
 impl CreatePostHttpRequestBody {
-    fn try_into_domain(self) -> Result<CreatePostRequest, CreatePostError> {
+    fn try_into_domain(self) -> Result<CreatePostRequest, Error> {
         let req = CreatePostRequest::new(self.title, self.content)?;
         Ok(req)
     }

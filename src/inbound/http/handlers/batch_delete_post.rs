@@ -2,10 +2,7 @@ use axum::{extract::State, http::StatusCode, Json};
 use serde::Deserialize;
 
 use crate::{
-    domain::blog::{
-        models::posts::{BatchDeletePostError, BatchDeletePostRequest},
-        ports::BlogService,
-    },
+    domain::blog::{error::Error, models::posts::BatchDeletePostRequest, ports::BlogService},
     inbound::http::{
         http_server::AppState,
         response::{ApiError, ApiSuccess},
@@ -18,7 +15,7 @@ pub struct BatchDeletePostHttpRequest {
 }
 
 impl BatchDeletePostHttpRequest {
-    pub fn try_into_domain(self) -> Result<BatchDeletePostRequest, BatchDeletePostError> {
+    pub fn try_into_domain(self) -> Result<BatchDeletePostRequest, Error> {
         let req = BatchDeletePostRequest::new(self.ids)?;
         Ok(req)
     }

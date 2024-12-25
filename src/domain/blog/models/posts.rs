@@ -1,8 +1,7 @@
 use chrono::{DateTime, Utc};
-use thiserror::Error;
 use validator::Validate;
 
-use crate::inbound::http::response::ApiError;
+use crate::domain::blog::error::Error;
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct Post {
@@ -22,30 +21,10 @@ pub struct CreatePostRequest {
 }
 
 impl CreatePostRequest {
-    pub fn new(title: String, content: String) -> Result<Self, CreatePostError> {
+    pub fn new(title: String, content: String) -> Result<Self, Error> {
         let req = Self { title, content };
         req.validate()?;
         Ok(req)
-    }
-}
-
-#[derive(Debug, Error)]
-pub enum CreatePostError {
-    #[error("create post request validate error")]
-    ValidationError(#[from] validator::ValidationErrors),
-    #[error(transparent)]
-    Unknown(#[from] anyhow::Error),
-}
-
-impl From<CreatePostError> for ApiError {
-    fn from(e: CreatePostError) -> Self {
-        match e {
-            CreatePostError::ValidationError(e) => ApiError::UnprocessableEntity(e.to_string()),
-            CreatePostError::Unknown(e) => {
-                tracing::error!("{:?}\n{}", e, e.backtrace());
-                ApiError::InternalServerError(e.to_string())
-            }
-        }
     }
 }
 
@@ -58,7 +37,7 @@ pub struct ListPostRequest {
 }
 
 impl ListPostRequest {
-    pub fn new(offset: u32, limit: u32) -> Result<Self, ListPostError> {
+    pub fn new(offset: u32, limit: u32) -> Result<Self, Error> {
         let req = Self { offset, limit };
         req.validate()?;
         Ok(req)
@@ -71,26 +50,6 @@ pub struct ListPostResponse {
     pub posts: Vec<Post>,
 }
 
-#[derive(Debug, Error)]
-pub enum ListPostError {
-    #[error("list post request validate error")]
-    ValidationError(#[from] validator::ValidationErrors),
-    #[error(transparent)]
-    Unknown(#[from] anyhow::Error),
-}
-
-impl From<ListPostError> for ApiError {
-    fn from(e: ListPostError) -> Self {
-        match e {
-            ListPostError::ValidationError(err) => ApiError::UnprocessableEntity(err.to_string()),
-            ListPostError::Unknown(err) => {
-                tracing::error!("{:?}\n{}", err, err.backtrace());
-                ApiError::InternalServerError(err.to_string())
-            }
-        }
-    }
-}
-
 #[derive(Debug, Clone, Validate)]
 pub struct UpdatePostRequest {
     pub id: String,
@@ -101,30 +60,10 @@ pub struct UpdatePostRequest {
 }
 
 impl UpdatePostRequest {
-    pub fn new(id: String, title: String, content: String) -> Result<Self, UpdatePostError> {
+    pub fn new(id: String, title: String, content: String) -> Result<Self, Error> {
         let req = Self { id, title, content };
         req.validate()?;
         Ok(req)
-    }
-}
-
-#[derive(Debug, Error)]
-pub enum UpdatePostError {
-    #[error("update post request validate error")]
-    ValidationError(#[from] validator::ValidationErrors),
-    #[error(transparent)]
-    Unknown(#[from] anyhow::Error),
-}
-
-impl From<UpdatePostError> for ApiError {
-    fn from(e: UpdatePostError) -> Self {
-        match e {
-            UpdatePostError::ValidationError(err) => ApiError::UnprocessableEntity(err.to_string()),
-            UpdatePostError::Unknown(err) => {
-                tracing::error!("{:?}\n{}", err, err.backtrace());
-                ApiError::InternalServerError(err.to_string())
-            }
-        }
     }
 }
 
@@ -134,30 +73,10 @@ pub struct DeletePostRequest {
 }
 
 impl DeletePostRequest {
-    pub fn new(id: String) -> Result<Self, DeletePostError> {
+    pub fn new(id: String) -> Result<Self, Error> {
         let req = Self { id };
         req.validate()?;
         Ok(req)
-    }
-}
-
-#[derive(Debug, Error)]
-pub enum DeletePostError {
-    #[error("delete post request validate error")]
-    ValidationError(#[from] validator::ValidationErrors),
-    #[error(transparent)]
-    Unknown(#[from] anyhow::Error),
-}
-
-impl From<DeletePostError> for ApiError {
-    fn from(e: DeletePostError) -> Self {
-        match e {
-            DeletePostError::ValidationError(err) => ApiError::UnprocessableEntity(err.to_string()),
-            DeletePostError::Unknown(err) => {
-                tracing::error!("{:?}\n{}", err, err.backtrace());
-                ApiError::InternalServerError(err.to_string())
-            }
-        }
     }
 }
 
@@ -168,31 +87,9 @@ pub struct BatchDeletePostRequest {
 }
 
 impl BatchDeletePostRequest {
-    pub fn new(ids: Vec<String>) -> Result<Self, BatchDeletePostError> {
+    pub fn new(ids: Vec<String>) -> Result<Self, Error> {
         let req = Self { ids };
         req.validate()?;
         Ok(req)
-    }
-}
-
-#[derive(Debug, Error)]
-pub enum BatchDeletePostError {
-    #[error("batch delete post request validate error")]
-    ValidationError(#[from] validator::ValidationErrors),
-    #[error(transparent)]
-    Unknown(#[from] anyhow::Error),
-}
-
-impl From<BatchDeletePostError> for ApiError {
-    fn from(e: BatchDeletePostError) -> Self {
-        match e {
-            BatchDeletePostError::ValidationError(err) => {
-                ApiError::UnprocessableEntity(err.to_string())
-            }
-            BatchDeletePostError::Unknown(err) => {
-                tracing::error!("{:?}\n{}", err, err.backtrace());
-                ApiError::InternalServerError(err.to_string())
-            }
-        }
     }
 }

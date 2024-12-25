@@ -8,7 +8,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     domain::blog::{
-        models::posts::{Post, UpdatePostError, UpdatePostRequest},
+        error::Error,
+        models::posts::{Post, UpdatePostRequest},
         ports::BlogService,
     },
     inbound::http::{
@@ -24,7 +25,7 @@ pub struct UpdatePostHttpRequestBody {
 }
 
 impl UpdatePostHttpRequestBody {
-    fn try_into_domain(self, id: String) -> Result<UpdatePostRequest, UpdatePostError> {
+    fn try_into_domain(self, id: String) -> Result<UpdatePostRequest, Error> {
         let req = UpdatePostRequest::new(id, self.title, self.content)?;
         Ok(req)
     }

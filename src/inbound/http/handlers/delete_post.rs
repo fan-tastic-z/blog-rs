@@ -5,10 +5,7 @@ use axum::{
 use serde::Deserialize;
 
 use crate::{
-    domain::blog::{
-        models::posts::{DeletePostError, DeletePostRequest},
-        ports::BlogService,
-    },
+    domain::blog::{error::Error, models::posts::DeletePostRequest, ports::BlogService},
     inbound::http::{
         http_server::AppState,
         response::{ApiError, ApiSuccess},
@@ -21,7 +18,7 @@ pub struct DeletePostHttpRequest {
 }
 
 impl DeletePostHttpRequest {
-    pub fn try_into_domain(self) -> Result<DeletePostRequest, DeletePostError> {
+    pub fn try_into_domain(self) -> Result<DeletePostRequest, Error> {
         let req = DeletePostRequest::new(self.id)?;
         Ok(req)
     }

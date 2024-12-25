@@ -3,10 +3,10 @@ use sqlx::{Postgres, Transaction};
 use uuid::Uuid;
 
 use crate::domain::blog::{
+    error::Error,
     models::posts::{
-        BatchDeletePostError, BatchDeletePostRequest, CreatePostError, CreatePostRequest,
-        DeletePostError, DeletePostRequest, ListPostError, ListPostRequest, ListPostResponse, Post,
-        UpdatePostRequest,
+        BatchDeletePostRequest, CreatePostRequest, DeletePostRequest, ListPostRequest,
+        ListPostResponse, Post, UpdatePostRequest,
     },
     ports::BlogRepository,
 };
@@ -139,7 +139,7 @@ impl Pg {
 }
 
 impl BlogRepository for Pg {
-    async fn create_post(&self, req: &CreatePostRequest) -> Result<Post, CreatePostError> {
+    async fn create_post(&self, req: &CreatePostRequest) -> Result<Post, Error> {
         let mut tx = self
             .pool
             .begin()
@@ -153,7 +153,7 @@ impl BlogRepository for Pg {
         Ok(post)
     }
 
-    async fn list_post(&self, req: ListPostRequest) -> Result<ListPostResponse, ListPostError> {
+    async fn list_post(&self, req: ListPostRequest) -> Result<ListPostResponse, Error> {
         let mut tx = self
             .pool
             .begin()
@@ -165,7 +165,7 @@ impl BlogRepository for Pg {
         Ok(ListPostResponse { total, posts })
     }
 
-    async fn update_post(&self, req: &UpdatePostRequest) -> Result<Post, CreatePostError> {
+    async fn update_post(&self, req: &UpdatePostRequest) -> Result<Post, Error> {
         let mut tx = self
             .pool
             .begin()
@@ -179,7 +179,7 @@ impl BlogRepository for Pg {
         Ok(post)
     }
 
-    async fn delete_post(&self, req: &DeletePostRequest) -> Result<(), DeletePostError> {
+    async fn delete_post(&self, req: &DeletePostRequest) -> Result<(), Error> {
         let mut tx = self
             .pool
             .begin()
@@ -190,10 +190,7 @@ impl BlogRepository for Pg {
         Ok(())
     }
 
-    async fn batch_delete_post(
-        &self,
-        req: &BatchDeletePostRequest,
-    ) -> Result<(), BatchDeletePostError> {
+    async fn batch_delete_post(&self, req: &BatchDeletePostRequest) -> Result<(), Error> {
         let mut tx = self
             .pool
             .begin()
