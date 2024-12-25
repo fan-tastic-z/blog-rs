@@ -1,8 +1,11 @@
 use super::{
     error::Error,
-    models::posts::{
-        BatchDeletePostRequest, CreatePostRequest, DeletePostRequest, ListPostRequest,
-        ListPostResponse, Post, UpdatePostRequest,
+    models::{
+        posts::{
+            BatchDeletePostRequest, CreatePostRequest, DeletePostRequest, ListPostRequest,
+            ListPostResponse, Post, UpdatePostRequest,
+        },
+        users::{CreateUserRequest, User},
     },
     ports::{BlogRepository, BlogService},
 };
@@ -45,5 +48,9 @@ where
 
     async fn batch_delete_post(&self, req: &BatchDeletePostRequest) -> Result<(), Error> {
         self.repo.batch_delete_post(req).await
+    }
+
+    async fn create_user(&self, req: &CreateUserRequest) -> Result<User, Error> {
+        self.repo.create_user(req).await
     }
 }

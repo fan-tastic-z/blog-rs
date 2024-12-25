@@ -73,6 +73,7 @@ impl ApiResponseBody<ApiErrorData> {
 pub enum ApiError {
     InternalServerError(String),
     UnprocessableEntity(String),
+    BadRequestError(String),
 }
 
 impl IntoResponse for ApiError {
@@ -95,6 +96,11 @@ impl IntoResponse for ApiError {
                     StatusCode::UNPROCESSABLE_ENTITY,
                     message,
                 )),
+            )
+                .into_response(),
+            ApiError::BadRequestError(message) => (
+                StatusCode::BAD_REQUEST,
+                Json(ApiResponseBody::new_error(StatusCode::BAD_REQUEST, message)),
             )
                 .into_response(),
         }
