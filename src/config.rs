@@ -50,20 +50,27 @@ impl TryFrom<String> for Environment {
     }
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Settings {
     pub application: ApplicationSettings,
+    pub auth: AuthSettings,
     pub database: DatabaseSettings,
     pub logger: LoggerSettings,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct ApplicationSettings {
     pub host: String,
     pub port: u16,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone)]
+pub struct AuthSettings {
+    pub secret: String,
+    pub expiration: u64,
+}
+
+#[derive(Debug, Deserialize, Clone)]
 pub struct DatabaseSettings {
     pub username: String,
     pub password: String,
@@ -72,7 +79,7 @@ pub struct DatabaseSettings {
     pub database_name: String,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct LoggerSettings {
     pub pretty_backtrace: bool,
     pub level: LogLevel,

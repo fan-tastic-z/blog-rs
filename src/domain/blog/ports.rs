@@ -7,7 +7,7 @@ use super::{
             BatchDeletePostRequest, CreatePostRequest, DeletePostRequest, ListPostRequest,
             ListPostResponse, Post, UpdatePostRequest,
         },
-        users::{CreateUserRequest, GetUserRequest, User},
+        users::{CreateUserRequest, GetUserRequest, LoginRequest, User},
     },
 };
 
@@ -43,6 +43,8 @@ pub trait BlogService: Clone + Send + Sync + 'static {
     ) -> impl Future<Output = Result<User, Error>> + Send;
 
     fn get_user(&self, req: &GetUserRequest) -> impl Future<Output = Result<User, Error>> + Send;
+
+    fn login(&self, req: &LoginRequest) -> impl Future<Output = Result<String, Error>> + Send;
 }
 
 pub trait BlogRepository: Clone + Send + Sync + 'static {
@@ -77,4 +79,6 @@ pub trait BlogRepository: Clone + Send + Sync + 'static {
     ) -> impl Future<Output = Result<User, Error>> + Send;
 
     fn get_user(&self, req: &GetUserRequest) -> impl Future<Output = Result<User, Error>> + Send;
+
+    fn login(&self, req: &LoginRequest) -> impl Future<Output = Result<String, Error>> + Send;
 }

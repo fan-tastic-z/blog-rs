@@ -4,4 +4,6 @@ use thiserror::Error;
 pub enum Error {
     #[error("compute password hash error")]
     PasswordHashError(#[from] argon2::password_hash::Error),
+    #[error(transparent)]
+    JwtTokenError(#[from] jsonwebtoken::errors::Error),
 }

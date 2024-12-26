@@ -7,6 +7,7 @@ use crate::{domain::blog::error::Error, utils};
 pub struct User {
     pub id: String,
     pub username: String,
+    pub password: String,
     pub email: Option<String>,
     pub phone: Option<String>,
     pub created_at: DateTime<Utc>,
@@ -53,6 +54,34 @@ pub struct GetUserRequest {
 impl GetUserRequest {
     pub fn new(username: String) -> Result<Self, Error> {
         let req = Self { username };
+        req.validate()?;
+        Ok(req)
+    }
+}
+
+#[derive(Debug, Clone, Validate)]
+pub struct LoginRequest {
+    #[validate(length(min = 1, max = 50))]
+    pub username: String,
+    #[validate(length(min = 8, max = 18))]
+    pub password: String,
+    pub jwt_secret: String,
+    pub expiration: u64,
+}
+
+impl LoginRequest {
+    pub fn new(
+        username: String,
+        password: String,
+        jwt_secret: String,
+        expiration: u64,
+    ) -> Result<Self, Error> {
+        let req = Self {
+            username,
+            password,
+            jwt_secret,
+            expiration,
+        };
         req.validate()?;
         Ok(req)
     }

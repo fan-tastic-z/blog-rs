@@ -2,16 +2,19 @@ use std::vec;
 
 use anyhow::Context;
 
-use crate::domain::blog::{
-    error::Error,
-    models::{
-        posts::{
-            BatchDeletePostRequest, CreatePostRequest, DeletePostRequest, ListPostRequest,
-            ListPostResponse, Post, UpdatePostRequest,
+use crate::{
+    domain::blog::{
+        error::Error,
+        models::{
+            posts::{
+                BatchDeletePostRequest, CreatePostRequest, DeletePostRequest, ListPostRequest,
+                ListPostResponse, Post, UpdatePostRequest,
+            },
+            users::{CreateUserRequest, GetUserRequest, LoginRequest, User},
         },
-        users::{CreateUserRequest, GetUserRequest, User},
+        ports::BlogRepository,
     },
-    ports::BlogRepository,
+    utils::{jwt, verify_password_hash},
 };
 
 use super::postgres::Pg;
@@ -124,6 +127,23 @@ impl BlogRepository for Pg {
         match res {
             Some(user) => Ok(user),
             None => Err(Error::Custom("user not found".to_string())),
+        }
+    }
+
+    async fn login(&self, req: &LoginRequest) -> Result<String, Error> {
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .context("failed t start transaction")?;
+        let user = self.get_user_by_username(&mut tx, &req.username).await?;
+        if let Some(user) = user {
+            verify_password_hash(user.password.clone(), req.password.clone())?;
+            let token =
+                jwt::JWT::new(&req.jwt_secret).generate_token(&req.expiration, user.id, None)?;
+            Ok(token)
+        } else {
+            Err(Error::Custom("user not found".to_string()))
         }
     }
 }
