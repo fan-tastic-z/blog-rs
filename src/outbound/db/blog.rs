@@ -1,3 +1,5 @@
+use std::vec;
+
 use anyhow::Context;
 
 use crate::domain::blog::{
@@ -7,7 +9,7 @@ use crate::domain::blog::{
             BatchDeletePostRequest, CreatePostRequest, DeletePostRequest, ListPostRequest,
             ListPostResponse, Post, UpdatePostRequest,
         },
-        users::{CreateUserRequest, User},
+        users::{CreateUserRequest, GetUserRequest, User},
     },
     ports::BlogRepository,
 };
@@ -91,14 +93,37 @@ impl BlogRepository for Pg {
         let user = self
             .save_user(
                 &mut tx,
-                &req.username,
+                &req.username.clone(),
                 &req.email,
                 &req.phone,
                 &req.password,
             )
             .await
             .context("failed to save user")?;
+        self.add_named_policy(
+            "p",
+            vec![
+                user.username.clone(),
+                format!("/v1/users/{}", user.username),
+                "(GET)|(POST)|(PUT)|(DELETE)".to_string(),
+            ],
+        )
+        .await?;
         tx.commit().await.context("failed to commit")?;
         Ok(user)
+    }
+
+    async fn get_user(&self, req: &GetUserRequest) -> Result<User, Error> {
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .context("failed t start transaction")?;
+        let res = self.get_user_by_username(&mut tx, &req.username).await?;
+        tx.commit().await.context("failed to commit")?;
+        match res {
+            Some(user) => Ok(user),
+            None => Err(Error::Custom("user not found".to_string())),
+        }
     }
 }

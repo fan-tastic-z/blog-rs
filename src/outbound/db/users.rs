@@ -47,4 +47,9 @@ impl Pg {
         .await?;
         Ok(user)
     }
+
+    pub async fn add_named_policy(&self, ptype: &str, params: Vec<String>) -> anyhow::Result<()> {
+        self.enforcer.add_policy(ptype, params).await?;
+        Ok(())
+    }
 }

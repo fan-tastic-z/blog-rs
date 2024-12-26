@@ -43,3 +43,17 @@ impl CreateUserRequest {
         Ok(req)
     }
 }
+
+#[derive(Debug, Clone, Validate)]
+pub struct GetUserRequest {
+    #[validate(length(min = 1, max = 50))]
+    pub username: String,
+}
+
+impl GetUserRequest {
+    pub fn new(username: String) -> Result<Self, Error> {
+        let req = Self { username };
+        req.validate()?;
+        Ok(req)
+    }
+}

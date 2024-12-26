@@ -11,7 +11,7 @@ use tokio::net;
 use crate::{config::ApplicationSettings, domain::blog::ports::BlogService};
 
 use super::handlers::{
-    batch_delete_post, create_post, create_user, delete_post, list_post, update_post,
+    batch_delete_post, create_post, create_user, delete_post, get_user, list_post, update_post,
 };
 
 #[derive(Debug, Clone)]
@@ -67,4 +67,5 @@ fn api_routes<BS: BlogService>() -> Router<AppState<BS>> {
         .route("/posts/:id", delete(delete_post::delete_post::<BS>))
         .route("/posts", delete(batch_delete_post::batch_delete_post::<BS>))
         .route("/users", post(create_user::create_user::<BS>))
+        .route("/users/:username", get(get_user::get_user::<BS>))
 }

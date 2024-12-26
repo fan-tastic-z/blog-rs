@@ -5,7 +5,7 @@ use super::{
             BatchDeletePostRequest, CreatePostRequest, DeletePostRequest, ListPostRequest,
             ListPostResponse, Post, UpdatePostRequest,
         },
-        users::{CreateUserRequest, User},
+        users::{CreateUserRequest, GetUserRequest, User},
     },
     ports::{BlogRepository, BlogService},
 };
@@ -52,5 +52,9 @@ where
 
     async fn create_user(&self, req: &CreateUserRequest) -> Result<User, Error> {
         self.repo.create_user(req).await
+    }
+
+    async fn get_user(&self, req: &GetUserRequest) -> Result<User, Error> {
+        self.repo.get_user(req).await
     }
 }
