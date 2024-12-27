@@ -8,6 +8,8 @@ pub enum Error {
     ValidationError(#[from] validator::ValidationErrors),
     #[error("{0}")]
     Custom(String),
+    #[error("{0}")]
+    Unauthorized(String),
     #[error(transparent)]
     UtilsError(#[from] crate::utils::error::Error),
     #[error(transparent)]
@@ -27,6 +29,7 @@ impl From<Error> for ApiError {
                 ApiError::InternalServerError(err.to_string())
             }
             Error::Custom(err) => ApiError::BadRequestError(err),
+            Error::Unauthorized(err) => ApiError::AuthorizationError(err),
         }
     }
 }

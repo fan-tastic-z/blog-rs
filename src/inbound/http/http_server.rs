@@ -3,6 +3,7 @@ use std::sync::Arc;
 use anyhow::{Context, Ok};
 
 use axum::{
+    middleware,
     routing::{delete, get, post, put},
     Router,
 };
@@ -10,9 +11,12 @@ use tokio::net;
 
 use crate::{config::Settings, domain::blog::ports::BlogService};
 
-use super::handlers::{
-    batch_delete_post, create_post, create_user, delete_post, get_user, list_post, login,
-    update_post,
+use super::{
+    handlers::{
+        batch_delete_post, create_post, create_user, delete_post, get_user, list_post, login,
+        update_post,
+    },
+    middlewares::auth,
 };
 
 #[derive(Debug, Clone)]
@@ -39,7 +43,7 @@ impl HttpServer {
             config: config.clone(),
         };
         let router = Router::new()
-            .nest("/api", api_routes())
+            .nest("/api", api_routes(state.clone()))
             .layer(trace_layer)
             .with_state(state);
         let application_settings = config.application.clone();
@@ -63,14 +67,36 @@ impl HttpServer {
     }
 }
 
-fn api_routes<BS: BlogService>() -> Router<AppState<BS>> {
+fn api_routes<BS>(state: AppState<BS>) -> Router<AppState<BS>>
+where
+    BS: BlogService + 'static,
+{
     Router::new()
-        .route("/posts", post(create_post::create_post::<BS>))
-        .route("/posts", get(list_post::list_post::<BS>))
-        .route("/posts/:id", put(update_post::update_post::<BS>))
-        .route("/posts/:id", delete(delete_post::delete_post::<BS>))
-        .route("/posts", delete(batch_delete_post::batch_delete_post::<BS>))
-        .route("/users", post(create_user::create_user::<BS>))
-        .route("/users/:username", get(get_user::get_user::<BS>))
-        .route("/users/login", post(login::login::<BS>))
+        .nest(
+            "/auth",
+            Router::new().route("/login", post(login::login::<BS>)),
+        )
+        .nest(
+            "/users",
+            Router::new()
+                .route("/", post(create_user::create_user::<BS>))
+                .route("/:username", get(get_user::get_user::<BS>))
+                .layer(middleware::from_fn_with_state(
+                    state.clone(),
+                    auth::auth_middleware::<BS>,
+                )),
+        )
+        .nest(
+            "/posts",
+            Router::new()
+                .route("/", post(create_post::create_post::<BS>))
+                .route("/", get(list_post::list_post::<BS>))
+                .route("/:id", put(update_post::update_post::<BS>))
+                .route("/:id", delete(delete_post::delete_post::<BS>))
+                .route("/", delete(batch_delete_post::batch_delete_post::<BS>))
+                .layer(middleware::from_fn_with_state(
+                    state.clone(),
+                    auth::auth_middleware::<BS>,
+                )),
+        )
 }

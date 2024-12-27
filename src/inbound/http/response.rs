@@ -74,6 +74,7 @@ pub enum ApiError {
     InternalServerError(String),
     UnprocessableEntity(String),
     BadRequestError(String),
+    AuthorizationError(String),
 }
 
 impl IntoResponse for ApiError {
@@ -101,6 +102,14 @@ impl IntoResponse for ApiError {
             ApiError::BadRequestError(message) => (
                 StatusCode::BAD_REQUEST,
                 Json(ApiResponseBody::new_error(StatusCode::BAD_REQUEST, message)),
+            )
+                .into_response(),
+            ApiError::AuthorizationError(message) => (
+                StatusCode::UNAUTHORIZED,
+                Json(ApiResponseBody::new_error(
+                    StatusCode::UNAUTHORIZED,
+                    message,
+                )),
             )
                 .into_response(),
         }
