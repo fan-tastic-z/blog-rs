@@ -7,7 +7,10 @@ use super::{
             BatchDeletePostRequest, CreatePostRequest, DeletePostRequest, ListPostRequest,
             ListPostResponse, Post, UpdatePostRequest,
         },
-        users::{CreateUserRequest, GetUserRequest, LoginRequest, User},
+        users::{
+            CreateUserRequest, DeleteUserRequest, GetUserByIdRequest, GetUserRequest, LoginRequest,
+            User,
+        },
     },
 };
 
@@ -42,9 +45,26 @@ pub trait BlogService: Clone + Send + Sync + 'static {
         req: &CreateUserRequest,
     ) -> impl Future<Output = Result<User, Error>> + Send;
 
+    fn get_user_by_id(
+        &self,
+        req: &GetUserByIdRequest,
+    ) -> impl Future<Output = Result<User, Error>> + Send;
+
+    fn delete_user(
+        &self,
+        req: &DeleteUserRequest,
+    ) -> impl Future<Output = Result<(), Error>> + Send;
+
     fn get_user(&self, req: &GetUserRequest) -> impl Future<Output = Result<User, Error>> + Send;
 
     fn login(&self, req: &LoginRequest) -> impl Future<Output = Result<String, Error>> + Send;
+
+    fn check_permission(
+        &self,
+        sub: &str,
+        obj: &str,
+        act: &str,
+    ) -> impl Future<Output = Result<bool, Error>> + Send;
 }
 
 pub trait BlogRepository: Clone + Send + Sync + 'static {
@@ -78,7 +98,24 @@ pub trait BlogRepository: Clone + Send + Sync + 'static {
         req: &CreateUserRequest,
     ) -> impl Future<Output = Result<User, Error>> + Send;
 
+    fn get_user_by_id(
+        &self,
+        req: &GetUserByIdRequest,
+    ) -> impl Future<Output = Result<User, Error>> + Send;
+
+    fn delete_user(
+        &self,
+        req: &DeleteUserRequest,
+    ) -> impl Future<Output = Result<(), Error>> + Send;
+
     fn get_user(&self, req: &GetUserRequest) -> impl Future<Output = Result<User, Error>> + Send;
 
     fn login(&self, req: &LoginRequest) -> impl Future<Output = Result<String, Error>> + Send;
+
+    fn check_permission(
+        &self,
+        sub: &str,
+        obj: &str,
+        act: &str,
+    ) -> impl Future<Output = Result<bool, Error>> + Send;
 }

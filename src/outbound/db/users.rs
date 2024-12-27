@@ -48,8 +48,40 @@ impl Pg {
         Ok(user)
     }
 
-    pub async fn add_named_policy(&self, ptype: &str, params: Vec<String>) -> anyhow::Result<()> {
-        self.enforcer.add_policy(ptype, params).await?;
+    pub async fn find_user_by_id(
+        &self,
+        tx: &mut Transaction<'_, Postgres>,
+        id: &str,
+    ) -> anyhow::Result<Option<User>> {
+        let user = sqlx::query_as::<_, User>(
+            r#"
+            SELECT * FROM users WHERE id = $1 LIMIT 1
+            "#,
+        )
+        .bind(id)
+        .fetch_optional(tx.as_mut())
+        .await?;
+        Ok(user)
+    }
+
+    pub async fn delete_user_by_id(
+        &self,
+        tx: &mut Transaction<'_, Postgres>,
+        id: &str,
+    ) -> anyhow::Result<()> {
+        sqlx::query(
+            r#"
+            DELETE FROM users WHERE id = $1
+            "#,
+        )
+        .bind(id.to_string())
+        .execute(tx.as_mut())
+        .await?;
+        Ok(())
+    }
+
+    pub async fn remove_policy(&self, ptype: &str, params: Vec<String>) -> anyhow::Result<()> {
+        self.enforcer.remove_policy(ptype, params).await?;
         Ok(())
     }
 }

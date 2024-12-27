@@ -10,7 +10,10 @@ use crate::{
                 BatchDeletePostRequest, CreatePostRequest, DeletePostRequest, ListPostRequest,
                 ListPostResponse, Post, UpdatePostRequest,
             },
-            users::{CreateUserRequest, GetUserRequest, LoginRequest, User},
+            users::{
+                CreateUserRequest, DeleteUserRequest, GetUserByIdRequest, GetUserRequest,
+                LoginRequest, User,
+            },
         },
         ports::BlogRepository,
     },
@@ -27,7 +30,7 @@ impl BlogRepository for Pg {
             .await
             .context("failed t start transaction")?;
         let post = self
-            .save_post(&mut tx, &req.title, &req.content)
+            .save_post(&mut tx, &req.title, &req.content, &req.username)
             .await
             .context("failed to save post")?;
         tx.commit().await.context("failed to commit")?;
@@ -40,7 +43,9 @@ impl BlogRepository for Pg {
             .begin()
             .await
             .context("failed t start transaction")?;
-        let posts = self.list_post(&mut tx, req.offset, req.limit).await?;
+        let posts = self
+            .list_post(&mut tx, req.offset, req.limit, &req.username)
+            .await?;
         let total = self.post_count(&mut tx).await?;
         tx.commit().await.context("failed to commit")?;
         Ok(ListPostResponse { total, posts })
@@ -53,7 +58,7 @@ impl BlogRepository for Pg {
             .await
             .context("failed t start transaction")?;
         let post = self
-            .update_post(&mut tx, &req.id, &req.title, &req.content)
+            .update_post(&mut tx, &req.id, &req.title, &req.content, &req.username)
             .await
             .context("failed to update post")?;
         tx.commit().await.context("failed to commit")?;
@@ -66,7 +71,8 @@ impl BlogRepository for Pg {
             .begin()
             .await
             .context("failed t start transaction")?;
-        self.delete_by_id(&mut tx, &req.id).await?;
+        self.delete_post_by_id_and_username(&mut tx, &req.id, &req.username)
+            .await?;
         tx.commit().await.context("failed to commit")?;
         Ok(())
     }
@@ -78,7 +84,8 @@ impl BlogRepository for Pg {
             .await
             .context("failed t start transaction")?;
 
-        self.delete_by_ids(&mut tx, req.ids.clone()).await?;
+        self.delete_posts_by_ids(&mut tx, req.ids.clone(), &req.username)
+            .await?;
         tx.commit().await.context("failed to commit")?;
         Ok(())
     }
@@ -103,15 +110,16 @@ impl BlogRepository for Pg {
             )
             .await
             .context("failed to save user")?;
-        self.add_named_policy(
-            "p",
-            vec![
-                user.username.clone(),
-                format!("/v1/users/{}", user.username),
-                "(GET)|(POST)|(PUT)|(DELETE)".to_string(),
-            ],
-        )
-        .await?;
+        self.enforcer
+            .add_policy(
+                "p",
+                vec![
+                    user.username.clone(),
+                    format!("/api/users/{}", user.username),
+                    "(GET)|(POST)|(PUT)|(DELETE)".to_string(),
+                ],
+            )
+            .await?;
         tx.commit().await.context("failed to commit")?;
         Ok(user)
     }
@@ -130,6 +138,45 @@ impl BlogRepository for Pg {
         }
     }
 
+    async fn get_user_by_id(&self, req: &GetUserByIdRequest) -> Result<User, Error> {
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .context("failed t start transaction")?;
+        let res = self.find_user_by_id(&mut tx, &req.id).await?;
+        tx.commit().await.context("failed to commit")?;
+        match res {
+            Some(user) => Ok(user),
+            None => Err(Error::Custom("user not found".to_string())),
+        }
+    }
+
+    async fn delete_user(&self, req: &DeleteUserRequest) -> Result<(), Error> {
+        let mut tx = self
+            .pool
+            .begin()
+            .await
+            .context("failed t start transaction")?;
+        let user = self.get_user_by_username(&mut tx, &req.username).await?;
+        if let Some(user) = user {
+            self.delete_user_by_id(&mut tx, &user.id).await?;
+            self.remove_policy(
+                "p",
+                vec![
+                    user.username,
+                    format!("/api/users/{}", req.username),
+                    "(GET)|(POST)|(PUT)|(DELETE)".to_string(),
+                ],
+            )
+            .await?;
+            tx.commit().await.context("failed to commit")?;
+            Ok(())
+        } else {
+            Err(Error::Custom("user not found".to_string()))
+        }
+    }
+
     async fn login(&self, req: &LoginRequest) -> Result<String, Error> {
         let mut tx = self
             .pool
@@ -145,5 +192,10 @@ impl BlogRepository for Pg {
         } else {
             Err(Error::Custom("user not found".to_string()))
         }
+    }
+
+    async fn check_permission(&self, sub: &str, obj: &str, act: &str) -> Result<bool, Error> {
+        let res = self.enforcer.check_permission(sub, obj, act).await?;
+        Ok(res)
     }
 }

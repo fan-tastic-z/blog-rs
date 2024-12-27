@@ -73,6 +73,7 @@ impl ApiResponseBody<ApiErrorData> {
 pub enum ApiError {
     InternalServerError(String),
     UnprocessableEntity(String),
+    PermissionDenied(String),
     BadRequestError(String),
     AuthorizationError(String),
 }
@@ -110,6 +111,11 @@ impl IntoResponse for ApiError {
                     StatusCode::UNAUTHORIZED,
                     message,
                 )),
+            )
+                .into_response(),
+            ApiError::PermissionDenied(message) => (
+                StatusCode::FORBIDDEN,
+                Json(ApiResponseBody::new_error(StatusCode::FORBIDDEN, message)),
             )
                 .into_response(),
         }

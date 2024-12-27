@@ -5,7 +5,10 @@ use super::{
             BatchDeletePostRequest, CreatePostRequest, DeletePostRequest, ListPostRequest,
             ListPostResponse, Post, UpdatePostRequest,
         },
-        users::{CreateUserRequest, GetUserRequest, LoginRequest, User},
+        users::{
+            CreateUserRequest, DeleteUserRequest, GetUserByIdRequest, GetUserRequest, LoginRequest,
+            User,
+        },
     },
     ports::{BlogRepository, BlogService},
 };
@@ -60,5 +63,17 @@ where
 
     async fn login(&self, req: &LoginRequest) -> Result<String, Error> {
         self.repo.login(req).await
+    }
+
+    async fn delete_user(&self, req: &DeleteUserRequest) -> Result<(), Error> {
+        self.repo.delete_user(req).await
+    }
+
+    async fn get_user_by_id(&self, req: &GetUserByIdRequest) -> Result<User, Error> {
+        self.repo.get_user_by_id(req).await
+    }
+
+    async fn check_permission(&self, sub: &str, obj: &str, act: &str) -> Result<bool, Error> {
+        self.repo.check_permission(sub, obj, act).await
     }
 }

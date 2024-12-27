@@ -1,4 +1,4 @@
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{extract::State, http::StatusCode, Extension, Json};
 use chrono::{DateTime, Utc};
 
 use serde::{Deserialize, Serialize};
@@ -6,7 +6,10 @@ use serde::{Deserialize, Serialize};
 use crate::{
     domain::blog::{
         error::Error,
-        models::posts::{CreatePostRequest, Post},
+        models::{
+            posts::{CreatePostRequest, Post},
+            users::User,
+        },
         ports::BlogService,
     },
     inbound::http::{
@@ -22,8 +25,8 @@ pub struct CreatePostHttpRequestBody {
 }
 
 impl CreatePostHttpRequestBody {
-    fn try_into_domain(self) -> Result<CreatePostRequest, Error> {
-        let req = CreatePostRequest::new(self.title, self.content)?;
+    fn try_into_domain(self, username: &str) -> Result<CreatePostRequest, Error> {
+        let req = CreatePostRequest::new(self.title, self.content, username.to_string())?;
         Ok(req)
     }
 }
@@ -48,10 +51,11 @@ impl From<&Post> for CreatePostResponseData {
 }
 
 pub async fn create_post<BS: BlogService>(
+    Extension(user): Extension<User>,
     State(state): State<AppState<BS>>,
     Json(body): Json<CreatePostHttpRequestBody>,
 ) -> Result<ApiSuccess<CreatePostResponseData>, ApiError> {
-    let domain_req = body.try_into_domain()?;
+    let domain_req = body.try_into_domain(&user.username)?;
     state
         .blog_service
         .create_post(&domain_req)

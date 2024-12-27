@@ -13,10 +13,10 @@ use crate::{config::Settings, domain::blog::ports::BlogService};
 
 use super::{
     handlers::{
-        batch_delete_post, create_post, create_user, delete_post, get_user, list_post, login,
-        update_post,
+        batch_delete_post, create_post, create_user, delete_post, delete_user, get_user, list_post,
+        login, update_post,
     },
-    middlewares::auth,
+    middlewares::{auth, permission},
 };
 
 #[derive(Debug, Clone)]
@@ -74,16 +74,22 @@ where
     Router::new()
         .nest(
             "/auth",
-            Router::new().route("/login", post(login::login::<BS>)),
+            Router::new()
+                .route("/login", post(login::login::<BS>))
+                .route("/register", post(create_user::create_user::<BS>)),
         )
         .nest(
             "/users",
             Router::new()
-                .route("/", post(create_user::create_user::<BS>))
                 .route("/:username", get(get_user::get_user::<BS>))
+                .route("/:username", delete(delete_user::delete_user::<BS>))
                 .layer(middleware::from_fn_with_state(
                     state.clone(),
                     auth::auth_middleware::<BS>,
+                ))
+                .layer(middleware::from_fn_with_state(
+                    state.clone(),
+                    permission::permission_middleware::<BS>,
                 )),
         )
         .nest(

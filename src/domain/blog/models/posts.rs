@@ -18,11 +18,16 @@ pub struct CreatePostRequest {
     pub title: String,
     #[validate(length(min = 1))]
     pub content: String,
+    pub username: String,
 }
 
 impl CreatePostRequest {
-    pub fn new(title: String, content: String) -> Result<Self, Error> {
-        let req = Self { title, content };
+    pub fn new(title: String, content: String, username: String) -> Result<Self, Error> {
+        let req = Self {
+            title,
+            content,
+            username,
+        };
         req.validate()?;
         Ok(req)
     }
@@ -34,11 +39,16 @@ pub struct ListPostRequest {
     pub offset: u32,
     #[validate(range(min = 1, max = 50))]
     pub limit: u32,
+    pub username: String,
 }
 
 impl ListPostRequest {
-    pub fn new(offset: u32, limit: u32) -> Result<Self, Error> {
-        let req = Self { offset, limit };
+    pub fn new(offset: u32, limit: u32, username: String) -> Result<Self, Error> {
+        let req = Self {
+            offset,
+            limit,
+            username,
+        };
         req.validate()?;
         Ok(req)
     }
@@ -57,11 +67,22 @@ pub struct UpdatePostRequest {
     pub title: String,
     #[validate(length(min = 1))]
     pub content: String,
+    pub username: String,
 }
 
 impl UpdatePostRequest {
-    pub fn new(id: String, title: String, content: String) -> Result<Self, Error> {
-        let req = Self { id, title, content };
+    pub fn new(
+        id: String,
+        title: String,
+        content: String,
+        username: String,
+    ) -> Result<Self, Error> {
+        let req = Self {
+            id,
+            title,
+            content,
+            username,
+        };
         req.validate()?;
         Ok(req)
     }
@@ -70,11 +91,12 @@ impl UpdatePostRequest {
 #[derive(Debug, Clone, Validate)]
 pub struct DeletePostRequest {
     pub id: String,
+    pub username: String,
 }
 
 impl DeletePostRequest {
-    pub fn new(id: String) -> Result<Self, Error> {
-        let req = Self { id };
+    pub fn new(id: String, username: String) -> Result<Self, Error> {
+        let req = Self { id, username };
         req.validate()?;
         Ok(req)
     }
@@ -84,11 +106,12 @@ impl DeletePostRequest {
 pub struct BatchDeletePostRequest {
     #[validate(length(min = 1))]
     pub ids: Vec<String>,
+    pub username: String,
 }
 
 impl BatchDeletePostRequest {
-    pub fn new(ids: Vec<String>) -> Result<Self, Error> {
-        let req = Self { ids };
+    pub fn new(ids: Vec<String>, username: String) -> Result<Self, Error> {
+        let req = Self { ids, username };
         req.validate()?;
         Ok(req)
     }

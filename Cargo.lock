@@ -258,7 +258,6 @@ dependencies = [
  "sqlx-adapter",
  "thiserror 2.0.6",
  "tokio",
- "tower",
  "tower-http",
  "tower-layer",
  "tracing",

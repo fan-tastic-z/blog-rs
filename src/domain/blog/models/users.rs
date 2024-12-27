@@ -46,6 +46,19 @@ impl CreateUserRequest {
 }
 
 #[derive(Debug, Clone, Validate)]
+pub struct GetUserByIdRequest {
+    pub id: String,
+}
+
+impl GetUserByIdRequest {
+    pub fn new(id: String) -> Result<Self, Error> {
+        let req = Self { id };
+        req.validate()?;
+        Ok(req)
+    }
+}
+
+#[derive(Debug, Clone, Validate)]
 pub struct GetUserRequest {
     #[validate(length(min = 1, max = 50))]
     pub username: String,
@@ -82,6 +95,20 @@ impl LoginRequest {
             jwt_secret,
             expiration,
         };
+        req.validate()?;
+        Ok(req)
+    }
+}
+
+#[derive(Debug, Clone, Validate)]
+pub struct DeleteUserRequest {
+    #[validate(length(min = 1, max = 50))]
+    pub username: String,
+}
+
+impl DeleteUserRequest {
+    pub fn new(username: String) -> Result<Self, Error> {
+        let req = Self { username };
         req.validate()?;
         Ok(req)
     }

@@ -1,7 +1,7 @@
 use axum::{
     extract::{Path, State},
     http::StatusCode,
-    Json,
+    Extension, Json,
 };
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -9,7 +9,10 @@ use serde::{Deserialize, Serialize};
 use crate::{
     domain::blog::{
         error::Error,
-        models::posts::{Post, UpdatePostRequest},
+        models::{
+            posts::{Post, UpdatePostRequest},
+            users::User,
+        },
         ports::BlogService,
     },
     inbound::http::{
@@ -25,8 +28,8 @@ pub struct UpdatePostHttpRequestBody {
 }
 
 impl UpdatePostHttpRequestBody {
-    fn try_into_domain(self, id: String) -> Result<UpdatePostRequest, Error> {
-        let req = UpdatePostRequest::new(id, self.title, self.content)?;
+    fn try_into_domain(self, id: String, username: &str) -> Result<UpdatePostRequest, Error> {
+        let req = UpdatePostRequest::new(id, self.title, self.content, username.to_string())?;
         Ok(req)
     }
 }
@@ -53,11 +56,12 @@ impl From<&Post> for UpdatePostResponseData {
 }
 
 pub async fn update_post<BS: BlogService>(
+    Extension(user): Extension<User>,
     State(state): State<AppState<BS>>,
     Path(id): Path<String>,
     Json(body): Json<UpdatePostHttpRequestBody>,
 ) -> Result<ApiSuccess<UpdatePostResponseData>, ApiError> {
-    let domain_req = body.try_into_domain(id)?;
+    let domain_req = body.try_into_domain(id, &user.username)?;
     state
         .blog_service
         .update_post(&domain_req)

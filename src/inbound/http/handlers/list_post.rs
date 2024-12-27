@@ -1,6 +1,7 @@
 use axum::{
     extract::{Query, State},
     http::StatusCode,
+    Extension,
 };
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -8,7 +9,10 @@ use serde::{Deserialize, Serialize};
 use crate::{
     domain::blog::{
         error::Error,
-        models::posts::{ListPostRequest, ListPostResponse, Post},
+        models::{
+            posts::{ListPostRequest, ListPostResponse, Post},
+            users::User,
+        },
         ports::BlogService,
     },
     inbound::http::{
@@ -24,8 +28,8 @@ pub struct ListPostHttpRequestBody {
 }
 
 impl ListPostHttpRequestBody {
-    fn try_into_domain(self) -> Result<ListPostRequest, Error> {
-        let req = ListPostRequest::new(self.offset, self.limit)?;
+    fn try_into_domain(self, username: &str) -> Result<ListPostRequest, Error> {
+        let req = ListPostRequest::new(self.offset, self.limit, username.to_string())?;
         Ok(req)
     }
 }
@@ -67,10 +71,11 @@ impl From<&ListPostResponse> for ListPostHttpResponseBody {
 }
 
 pub async fn list_post<BS: BlogService>(
+    Extension(user): Extension<User>,
     State(state): State<AppState<BS>>,
     Query(body): Query<ListPostHttpRequestBody>,
 ) -> Result<ApiSuccess<ListPostHttpResponseBody>, ApiError> {
-    let domain_req = body.try_into_domain()?;
+    let domain_req = body.try_into_domain(&user.username)?;
     state
         .blog_service
         .list_post(domain_req)

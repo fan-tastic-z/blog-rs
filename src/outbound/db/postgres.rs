@@ -9,6 +9,7 @@ use sqlx_adapter::{
     SqlxAdapter,
 };
 use tokio::sync::RwLock;
+use tracing::info;
 
 use crate::config::DatabaseSettings;
 
@@ -43,6 +44,22 @@ impl EnforcerWrapper {
     pub async fn add_policy(&self, ptype: &str, params: Vec<String>) -> anyhow::Result<()> {
         self.0.write().await.add_named_policy(ptype, params).await?;
         Ok(())
+    }
+
+    pub async fn remove_policy(&self, ptype: &str, params: Vec<String>) -> anyhow::Result<()> {
+        self.0
+            .write()
+            .await
+            .remove_named_policy(ptype, params)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn check_permission(&self, sub: &str, obj: &str, act: &str) -> anyhow::Result<bool> {
+        let enforcer = self.0.read().await;
+        let res = enforcer.enforce(vec![sub.into(), obj.into(), act.into()])?;
+        info!("check permission: {sub} {obj} {act} {res}");
+        Ok(res)
     }
 }
 
