@@ -4,6 +4,11 @@ version = "0.1.0"
 license = "MIT OR Apache-2.0"
 edition = "2021"
 
+[[bin]]
+name = "blog"
+path = "src/bin/server/main.rs"
+
+
 [dependencies]
 anyhow = "1.0.94"
 argon2 = { version = "0.5.3", features = ["std"] }
